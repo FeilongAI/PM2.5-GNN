@@ -5,7 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
-
+*.png
+*.txt
+*.npy
+*.csv
+*.npz
 # Distribution / packaging
 .Python
 build/
@@ -129,8 +133,3 @@ dmypy.json
 .pyre/
 *.swp
 .idea
-*.png
-*.txt
-*.npy
-*.csv
-*.npz
