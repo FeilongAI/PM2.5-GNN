@@ -119,7 +119,7 @@ class HazeData(data.Dataset):
         self.time_arr = []
         for time_arrow in arrow.Arrow.interval('hour', self.data_start, self.data_end.shift(hours=+3), 3):
             self.time_arrow.append(time_arrow[0])
-            self.time_arr.append(time_arrow[0].timestamp)
+            self.time_arr.append(time_arrow[0].timestamp())
         self.time_arr = np.stack(self.time_arr, axis=-1)
 
     def _load_npy(self):
@@ -129,7 +129,7 @@ class HazeData(data.Dataset):
 
     def _get_idx(self, t):
         t0 = self.data_start
-        return int((t.timestamp - t0.timestamp) / (60 * 60 * 3))
+        return int((t.timestamp() - t0.timestamp()) / (60 * 60 * 3))
 
     def _get_time(self, time_yaml):
         arrow_time = arrow.get(datetime(*time_yaml[0]), time_yaml[1])

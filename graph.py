@@ -13,8 +13,8 @@ import metpy.calc as mpcalc
 from bresenham import bresenham
 
 
-city_fp = os.path.join(proj_dir, 'data/city.txt')
-altitude_fp = os.path.join(proj_dir, 'data/altitude.npy')
+city_fp = os.path.join(proj_dir, '/root/pm25/data/city.txt')
+altitude_fp = os.path.join(proj_dir, '/root/pm25/data/altitude.npy')
 
 
 class Graph():
