@@ -12,9 +12,9 @@ class GraphGNN(nn.Module):
     def __init__(self, device, edge_index, edge_attr, in_dim, out_dim, wind_mean, wind_std):
         super(GraphGNN, self).__init__()
         self.device = device
-        self.edge_index = torch.LongTensor(edge_index).to(self.device)
-        self.edge_attr = torch.Tensor(np.float32(edge_attr))
-        self.edge_attr_norm = (self.edge_attr - self.edge_attr.mean(dim=0)) / self.edge_attr.std(dim=0)
+        self.edge_index = torch.LongTensor(edge_index).to(self.device)#边的邻接矩阵
+        self.edge_attr = torch.Tensor(np.float32(edge_attr))#边风速
+        self.edge_attr_norm = (self.edge_attr - self.edge_attr.mean(dim=0)) / self.edge_attr.std(dim=0)#
         self.w = Parameter(torch.rand([1]))
         self.b = Parameter(torch.rand([1]))
         self.wind_mean = torch.Tensor(np.float32(wind_mean)).to(self.device)
@@ -61,7 +61,7 @@ class GraphGNN(nn.Module):
         out = out_add# + out_sub
         out = self.node_mlp(out)
 
-        return out
+        return out#torch.Size([32, 184, 13])
 
 
 class PM25_GNN_nosub(nn.Module):
@@ -84,18 +84,18 @@ class PM25_GNN_nosub(nn.Module):
         self.gru_cell = GRUCell(self.in_dim + self.gnn_out, self.hid_dim)
         self.fc_out = nn.Linear(self.hid_dim, self.out_dim)
 
-    def forward(self, pm25_hist, feature):
+    def forward(self, pm25_hist, feature):#pm25_hist torch.Size([32, 1, 184, 1]) batch_size seq_len city_num, pm25 feature torch.Size([32, 25, 184, 12])
         pm25_pred = []
         h0 = torch.zeros(self.batch_size * self.city_num, self.hid_dim).to(self.device)
         hn = h0
-        xn = pm25_hist[:, -1]
+        xn = pm25_hist[:, -1]#torch.Size([32, 1, 184, 1])  ->torch.Size([32, 184, 1])
         for i in range(self.pred_len):
-            x = torch.cat((xn, feature[:, self.hist_len + i]), dim=-1)
+            x = torch.cat((xn, feature[:, self.hist_len + i]), dim=-1)#将特征和pm合成一个batch
 
-            xn_gnn = x
-            xn_gnn = xn_gnn.contiguous()
-            xn_gnn = self.graph_gnn(xn_gnn)
-            x = torch.cat([xn_gnn, x], dim=-1)
+            xn_gnn = x #torch.Size([32, 184, 13])
+            xn_gnn = xn_gnn.contiguous()#保证在内存中连续
+            xn_gnn = self.graph_gnn(xn_gnn)#torch.Size([32, 184, 13])
+            x = torch.cat([xn_gnn, x], dim=-1)#torch.Size([32, 184, 26])
 
             hn = self.gru_cell(x, hn)
             xn = hn.view(self.batch_size, self.city_num, self.hid_dim)

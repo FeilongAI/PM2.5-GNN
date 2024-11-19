@@ -117,7 +117,7 @@ def train(train_loader, model, optimizer):
     train_loss = 0
     for batch_idx, data in tqdm(enumerate(train_loader)):
         optimizer.zero_grad()
-        pm25, feature, time_arr = data
+        pm25, feature, time_arr = data#pm25 torch.Size([32, 25, 184, 1]) time_arr torch.Size([32, 25]) feature torch.Size([32, 25, 184, 12])
         pm25 = pm25.to(device)
         feature = feature.to(device)
         pm25_label = pm25[:, hist_len:]

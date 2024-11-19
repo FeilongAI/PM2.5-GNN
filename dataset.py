@@ -82,21 +82,21 @@ class HazeData(data.Dataset):
         self.pm25_std = self.pm25.std()
 
     def _process_feature(self):
-        metero_var = config['data']['metero_var']
-        metero_use = config['experiments']['metero_use']
-        metero_idx = [metero_var.index(var) for var in metero_use]
-        self.feature = self.feature[:,:,metero_idx]
+        metero_var = config['data']['metero_var']#获取所有变量
+        metero_use = config['experiments']['metero_use']#获取使用的变量
+        metero_idx = [metero_var.index(var) for var in metero_use]#获取特征下标
+        self.feature = self.feature[:,:,metero_idx]#(721, 184, 8)
 
-        u = self.feature[:, :, -2] * units.meter / units.second
-        v = self.feature[:, :, -1] * units.meter / units.second
-        speed = 3.6 * mpcalc.wind_speed(u, v)._magnitude
-        direc = mpcalc.wind_direction(u, v)._magnitude
+        u = self.feature[:, :, -2] * units.meter / units.second#加上物理量u_component_of_wind+950 shape(721, 184)
+        v = self.feature[:, :, -1] * units.meter / units.second#v_component_of_wind+950#shape (721, 184)
+        speed = 3.6 * mpcalc.wind_speed(u, v)._magnitude#使用 MetPy 的 mpcalc.wind_speed() 从 u、v 分量计算总风速
+        direc = mpcalc.wind_direction(u, v)._magnitude#计算风向(direc)#shape(721, 184)
 
         h_arr = []
         w_arr = []
         for i in self.time_arrow:
-            h_arr.append(i.hour)
-            w_arr.append(i.isoweekday())
+            h_arr.append(i.hour)#获取小时
+            w_arr.append(i.isoweekday())#获取第几周
         h_arr = np.stack(h_arr, axis=-1)
         w_arr = np.stack(w_arr, axis=-1)
         h_arr = np.repeat(h_arr[:, None], self.graph.node_num, axis=1)
@@ -104,7 +104,7 @@ class HazeData(data.Dataset):
 
         self.feature = np.concatenate([self.feature, h_arr[:, :, None], w_arr[:, :, None],
                                        speed[:, :, None], direc[:, :, None]
-                                       ], axis=-1)
+                                       ], axis=-1)#(721, 184, 12)#添加四个特征小时特征，周特征，风速特征，风向特征
 
     def _process_time(self):
         start_idx = self._get_idx(self.start_time)
