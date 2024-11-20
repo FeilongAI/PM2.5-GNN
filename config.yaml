@@ -22,7 +22,7 @@ train:
   batch_size: 32
   epochs: 50
   exp_repeat: 10
-  hist_len: 6
+  hist_len: 2
   pred_len: 24
   weight_decay: 0.0005
   early_stop: 10
