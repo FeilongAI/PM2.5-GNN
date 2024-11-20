@@ -52,7 +52,28 @@ data:
      'v_component_of_wind+950',
      'vertical_velocity+950',
      'vorticity+950']
-
+Transformer:
+  seq_len: 96  # input sequence length
+  label_len: 48  # start token length
+  pred_len: 96
+  d_model: 512
+  n_heads: 8
+  e_layers: 2
+  d_layers: 1
+  d_ff: 2048
+  dropout: 0.1
+  activation: "gelu"
+  embedding: "timeF"  # from embed
+  channel_independence: false
+  inverse: false
+  class_strategy: "projection"
+  efficient_training: false
+  use_norm: true
+  freq: "h"
+  enc_in: 7
+  dec_in: 7
+  c_out: 7
+  moving_avg: 25
 dataset:
   data_start: [[2015, 1, 1, 0, 0], GMT]
   data_end: [[2018, 12, 31, 21, 0], GMT]
