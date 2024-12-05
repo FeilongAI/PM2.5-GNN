@@ -35,17 +35,17 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.activation = F.relu if activation == "relu" else F.gelu
 
-    def forward(self, x, attn_mask=None, tau=None, delta=None):
+    def forward(self, x, attn_mask=None, tau=None, delta=None):#注意力计算模块
         new_x, attn = self.attention(
             x, x, x,
             attn_mask=attn_mask,
             tau=tau, delta=delta
         )
-        x = x + self.dropout(new_x)
+        x = x + self.dropout(new_x)#残差连接 torch.Size([32, 184, 512])
 
-        y = x = self.norm1(x)
-        y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))
-        y = self.dropout(self.conv2(y).transpose(-1, 1))
+        y = x = self.norm1(x) # torch.Size([32, 184, 512])
+        y = self.dropout(self.activation(self.conv1(y.transpose(-1, 1))))#torch.Size([32, 2048, 184])
+        y = self.dropout(self.conv2(y).transpose(-1, 1))#torch.Size([32, 184, 512])
 
         return self.norm2(x + y), attn
 
@@ -57,7 +57,7 @@ class Encoder(nn.Module):
         self.conv_layers = nn.ModuleList(conv_layers) if conv_layers is not None else None
         self.norm = norm_layer
 
-    def forward(self, x, attn_mask=None, tau=None, delta=None):
+    def forward(self, x, attn_mask=None, tau=None, delta=None):#x torch.Size([32, 184, 512]),
         # x [B, L, D]
         attns = []
         if self.conv_layers is not None:
@@ -76,7 +76,7 @@ class Encoder(nn.Module):
         if self.norm is not None:
             x = self.norm(x)
 
-        return x, attns
+        return x, attns#torch.Size([32, 184, 512])
 
 
 class DecoderLayer(nn.Module):

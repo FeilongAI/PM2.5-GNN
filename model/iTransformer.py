@@ -38,8 +38,9 @@ class Model(nn.Module):
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
         self.projector = nn.Linear(configs.d_model, configs.pred_len, bias=True)
+        self.fc = nn.Linear(configs.d_model, configs.pred_len, bias=True)
 
-    def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+    def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):#torch.Size([32, 184, 26])
         if self.use_norm:
             # Normalization from Non-stationary Transformer
             means = x_enc.mean(1, keepdim=True).detach()
@@ -68,9 +69,12 @@ class Model(nn.Module):
             dec_out = dec_out * (stdev[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
             dec_out = dec_out + (means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
 
-        return dec_out
+        return dec_out#torch.Size([32, 1, 26])
 
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
-        dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
+        dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)# 32 96 321
+        # dec_out = self.forecast(x_enc, None, None, None)
+
         return dec_out[:, -self.pred_len:, :]  # [B, L, D]
+        # return dec_out  # [B, L, D]

@@ -3,9 +3,10 @@ from torch import nn
 from model.iTransformer import Model
 from torch.nn import Sequential, Linear, Sigmoid
 import numpy as np
-from torch_scatter import scatter_add#, scatter_sub  # no scatter sub in lastest PyG
+from torch_scatter import scatter_add
 from torch.nn import functional as F
 from torch.nn import Parameter
+
 class GraphGNN(nn.Module):
     def __init__(self, device, edge_index, edge_attr, in_dim, out_dim, wind_mean, wind_std):
         super(GraphGNN, self).__init__()
@@ -54,7 +55,6 @@ class GraphGNN(nn.Module):
 
         out = self.edge_mlp(out)
         out_add = scatter_add(out, edge_target, dim=1, dim_size=x.size(1))
-        # out_sub = scatter_sub(out, edge_src, dim=1, dim_size=x.size(1))
         out_sub = scatter_add(out.neg(), edge_src, dim=1, dim_size=x.size(1))  # For higher version of PyG.
 
         out = out_add + out_sub
@@ -73,34 +73,34 @@ class PM25_iTransformer(nn.Module):
         self.batch_size = batch_size
 
         self.in_dim = in_dim
-        self.hid_dim = 64
+        self.hid_dim = 26
         self.out_dim = 1
-        self.gnn_out = 13
+        self.gnn_out = 1
+        self.feature_dim = 2
 
         self.fc_in = nn.Linear(self.in_dim, self.hid_dim)
         self.graph_gnn = GraphGNN(self.device, edge_index, edge_attr, self.in_dim, self.gnn_out, wind_mean, wind_std)
         self.iTransformer = Model(transformer_configs)
-        self.fc_out = nn.Linear(self.hid_dim, self.out_dim)
+        self.fc_out = nn.Linear(self.in_dim+self.gnn_out, self.feature_dim)
+        self.pm_out = nn.Linear(self.feature_dim*self.city_num, self.city_num)
 
     def forward(self, pm25_hist, feature):
         pm25_pred = []
-        h0 = torch.zeros(self.batch_size * self.city_num, self.hid_dim).to(self.device)
-        hn = h0
-        xn = pm25_hist[:, -1]
-        for i in range(self.pred_len):
-            x = torch.cat((xn, feature[:, self.hist_len + i]), dim=-1)
-
+        gnn_out =[]
+        for i in range(self.hist_len):
+            x = torch.cat((pm25_hist[:,i], feature[:, i]), dim=-1)
             xn_gnn = x
             xn_gnn = xn_gnn.contiguous()
             xn_gnn = self.graph_gnn(xn_gnn)
             x = torch.cat([xn_gnn, x], dim=-1)
+            gnn_out.append(x)
+        feature_out = torch.stack(gnn_out,dim=1)
+        feature_out = self.fc_out(feature_out)
+        B, L, N, E = feature_out.size()
+        feature_out = feature_out.view(B, L, N * E)
+        xn = self.iTransformer(feature_out, None, None, None)
+        xn = self.pm_out(xn)
+        xn = xn.view(B, self.pred_len, self.city_num, self.out_dim)
+        tensor_list = [xn[:, i, :, :] for i in range(xn.size(1))]
 
-            hn = self.iTransformer(x, feature[:, self.hist_len + i], x, feature[:, self.hist_len + i])
-            hn = hn.view(self.batch_size * self.city_num, self.hid_dim)
-            xn = hn.view(self.batch_size, self.city_num, self.hid_dim)
-            xn = self.fc_out(xn)
-            pm25_pred.append(xn)
-
-        pm25_pred = torch.stack(pm25_pred, dim=1)
-
-        return pm25_pred
+        return xn

@@ -10,19 +10,20 @@ experiments:
                'v_component_of_wind+950',]
   save_npy: True
   dataset_num: 3
-  model: PM25_GNN_nosub
+  model: PM25_iTransformer
 #  model: LSTM
 #  model: GRU
 #  model: GC_LSTM
 #  model: nodesFC_GRU
 #  model: PM25_GNN
 #  model: PM25_GNN_nosub
+# model: PM25_iTransformer
 
 train:
-  batch_size: 32
+  batch_size: 8
   epochs: 50
-  exp_repeat: 10
-  hist_len: 2
+  exp_repeat: 1
+  hist_len: 6
   pred_len: 24
   weight_decay: 0.0005
   early_stop: 10

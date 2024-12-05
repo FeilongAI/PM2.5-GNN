@@ -131,7 +131,7 @@ class FlashAttention(nn.Module):
         return res.permute(0, 2, 1, 3).contiguous(), None
 
 
-class FullAttention(nn.Module):
+class FullAttention(nn.Module):#FUllATTENTIOn
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
         super(FullAttention, self).__init__()
         self.scale = scale
@@ -140,11 +140,11 @@ class FullAttention(nn.Module):
         self.dropout = nn.Dropout(attention_dropout)
 
     def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
-        B, L, H, E = queries.shape
+        B, L, H, E = queries.shape#对嵌入维度进行拆分
         _, S, _, D = values.shape
         scale = self.scale or 1. / sqrt(E)
 
-        scores = torch.einsum("blhe,bshe->bhls", queries, keys)
+        scores = torch.einsum("blhe,bshe->bhls", queries, keys)#torch.Size([32, 8, 184, 184])
 
         if self.mask_flag:
             if attn_mask is None:
@@ -278,12 +278,12 @@ class AttentionLayer(nn.Module):
         self.out_projection = nn.Linear(d_values * n_heads, d_model)
         self.n_heads = n_heads
 
-    def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):
-        B, L, _ = queries.shape
-        _, S, _ = keys.shape
-        H = self.n_heads
+    def forward(self, queries, keys, values, attn_mask, tau=None, delta=None):#到达Q，K ,VATTENTION层
+        B, L, _ = queries.shape#B:32,L:184 _ 512
+        _, S, _ = keys.shape#S_184
+        H = self.n_heads#H head : 8
 
-        queries = self.query_projection(queries).view(B, L, H, -1)
+        queries = self.query_projection(queries).view(B, L, H, -1)#32 184 512 32,184 8 64 转换成头？
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
 
@@ -295,9 +295,9 @@ class AttentionLayer(nn.Module):
             tau=tau,
             delta=delta
         )
-        out = out.view(B, L, -1)
+        out = out.view(B, L, -1)#torch.Size([32, 184, 512])
 
-        return self.out_projection(out), attn
+        return self.out_projection(out), attn #torch.Size([32, 184, 512])
 
 
 class ReformerLayer(nn.Module):

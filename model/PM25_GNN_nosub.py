@@ -6,7 +6,7 @@ import numpy as np
 from torch_scatter import scatter_add#, scatter_sub  # no scatter sub in lastest PyG
 from torch.nn import functional as F
 from torch.nn import Parameter
-
+from model.iTransformer import Model
 
 class GraphGNN(nn.Module):
     def __init__(self, device, edge_index, edge_attr, in_dim, out_dim, wind_mean, wind_std):
@@ -99,9 +99,9 @@ class PM25_GNN_nosub(nn.Module):
 
             hn = self.gru_cell(x, hn)  # 使用GRU单元更新隐藏状态
             xn = hn.view(self.batch_size, self.city_num, self.hid_dim)  # 将隐藏状态重塑为匹配批次和城市维度
-            xn = self.fc_out(xn)  # 通过全连接层得到预测值这里使用预测值去继续预测下一个
+            xn = self.fc_out(xn)  # torch.Size([32, 184, 1])通过全连接层得到预测值这里使用预测值去继续预测下一个
             pm25_pred.append(xn)  # 将预测值添加到列表中
 
-        pm25_pred = torch.stack(pm25_pred, dim=1)  # 沿时间维度堆叠预测值
+        pm25_pred = torch.stack(pm25_pred, dim=1)  # torch.Size([32, 24, 184, 1])沿时间维度堆叠预测值
 
-        return pm25_pred  # 返回最终预测值
+        return pm25_pred  # torch.Size([32, 24, 184, 1])返回最终预测值
